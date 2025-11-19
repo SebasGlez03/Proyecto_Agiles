@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Usuario</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 400px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 5px; }
+        input[type="text"], input[type="password"], select { width: 100%; padding: 10px; margin: 8px 0; display: inline-block; border: 1px solid #ccc; box-sizing: border-box; }
+        button { background-color: #4CAF50; color: white; padding: 14px 20px; margin: 8px 0; border: none; cursor: pointer; width: 100%; }
+        .message { padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Registro de Nuevo Usuario</h2>
+        <form id="registrationForm">
+            <label for="username"><b>Nombre de Usuario</b></label>
+            <input type="text" placeholder="Ingresa Nombre de Usuario" id="username" required>
+
+            <label for="password"><b>Contraseña</b></label>
+            <input type="password" placeholder="Ingresa Contraseña" id="password" required>
+            
+            <label for="role"><b>Tipo de Cuenta</b></label>
+            <select id="role">
+                <option value="VISITANTE">Visitante / Residente</option>
+                <option value="EMPRENDEDOR">Emprendedor / Proveedor</option>
+            </select>
+
+            <button type="submit">Registrarse</button>
+        </form>
+        <div id="message" class="message" style="display: none;"></div>
+    </div>
+
+    <script src="register.js"></script>
+</body>
+</html>
