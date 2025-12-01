@@ -9,7 +9,10 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import reservas.dto.JwtResponse;
+import reservas.dto.LoginRequest;
 import reservas.repository.UserRepository;
+import reservas.security.jwt.JwtUtils;
 
 /**
  *
@@ -23,7 +26,16 @@ public class AuthService {
     
     @Autowired
     private PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
+    
+//    private final JwtUtils jwtUtils;
 
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtils = jwtUtils;
+    }
+    
     /**
      * Lógica para registrar un nuevo usuario (Visitante o Emprendedor).
      */
@@ -45,18 +57,32 @@ public class AuthService {
     }
     
     /**
-     * Lógica para la autenticación de usuarios (R2 - Login).
+     * Procesa la solicitud de inicio de sesión.
+     * @param loginRequest
+     * @return 
      */
-    public User authenticateUser(String username, String rawPassword) throws Exception {
-        // Buscar por username en la BD
-        User user = Optional.ofNullable(userRepository.findByUsername(username))
-                  .orElseThrow(() -> new Exception("Usuario no encontrado."));
+    public Optional<JwtResponse> authenticateUser(LoginRequest loginRequest) {
+        
+        Optional<User> userOptional = userRepository.findByUsername(loginRequest.getUsername());
 
-        // Verificamos la contraseña
-        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
-            throw new Exception("Credenciales incorrectas.");
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            
+            if (passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+                
+                // --- INTEGRACIÓN DEL JWT (CORREGIDA) ---
+                String roleName = user.getRole();
+                String jwtToken = jwtUtils.generateJwtToken(user.getUsername(), roleName); 
+                // ----------------------------------------
+                
+                return Optional.of(new JwtResponse(
+                    jwtToken, 
+                    user.getUsername(), 
+                    roleName // Usamos la variable roleName
+                ));
+            }
         }
-
-        return user;
+        
+        return Optional.empty();
     }
 }

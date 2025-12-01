@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Plataforma Reservas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .btn-primary { background-color: #667eea; border: none; }
+        .btn-primary:hover { background-color: #5a6fd6; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <div class="card p-4">
+                <div class="card-body">
+                    <h3 class="text-center mb-4">Bienvenido</h3>
+                    
+                    <form id="loginForm" novalidate>
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Usuario</label>
+                            <input type="text" class="form-control" id="username" placeholder="Tu usuario" required autocomplete="off">
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="password" placeholder="Tu contraseña" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <a href="register.html" class="text-decoration-none">¿No tienes cuenta? Regístrate</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    // Esperamos a que el DOM esté listo
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("DOM cargado, script listo."); // DEBUG 1
+
+        const form = document.getElementById('loginForm');
+        
+        form.addEventListener('submit', async (e) => {
+            // 1. DETENER LA RECARGA DE LA PÁGINA
+            e.preventDefault(); 
+            console.log("Click interceptado. No se recarga la página."); // DEBUG 2
+
+            const usernameInput = document.getElementById('username').value;
+            const passwordInput = document.getElementById('password').value;
+
+            // Validación simple antes de enviar
+            if (!usernameInput || !passwordInput) {
+                Swal.fire('Atención', 'Por favor llena todos los campos', 'warning');
+                return;
+            }
+
+            console.log("Enviando datos al backend...", { usernameInput }); // DEBUG 3
+
+            try {
+                const response = await fetch('http://localhost:8082/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: usernameInput, password: passwordInput })
+                });
+
+                console.log("Respuesta recibida, status:", response.status); // DEBUG 4
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Guardar datos
+                    localStorage.setItem('jwtToken', data.token);
+                    localStorage.setItem('username', data.username);
+                    localStorage.setItem('userRole', data.role);
+
+                    // Alerta de éxito
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Bienvenido!',
+                        text: 'Iniciando sesión...',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = 'dashboard.html';
+                    });
+
+                } else {
+                    // Error visual claro (401 Unauthorized)
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de acceso',
+                        text: 'Usuario o contraseña incorrectos',
+                    });
+                }
+            } catch (error) {
+                console.error("Error de conexión:", error); // DEBUG 5
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error del Servidor',
+                    text: 'No se pudo conectar con el backend (localhost:8082). ¿Está encendido?',
+                });
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 
 /**
  *
@@ -17,6 +18,7 @@ import jakarta.persistence.Table;
  */
 @Entity // Indica que es una tabla de BD
 @Table(name = "users") 
+@EntityScan(basePackages = "reservas.model")
 public class User {
 
     @Id

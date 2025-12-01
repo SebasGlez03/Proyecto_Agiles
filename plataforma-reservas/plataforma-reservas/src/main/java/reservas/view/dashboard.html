@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorar - Plataforma Reservas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #667eea; }
+        .card-exp { transition: transform 0.2s; cursor: pointer; border: none; shadow: sm;}
+        .card-exp:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .price-tag { color: #28a745; font-weight: bold; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark mb-4 px-3">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">🌴 Reservas Locales</span>
+            <div class="d-flex align-items-center">
+                <span id="userInfo" class="text-white me-3"></span>
+                <button onclick="logout()" class="btn btn-outline-light btn-sm">Salir</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div id="createExpSection" class="row justify-content-center mb-5" style="display: none;">
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0 text-primary">🚀 Publicar Nueva Experiencia</h5>
+                    </div>
+                    <div class="card-body">
+                        <form onsubmit="crearExperiencia(event)">
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <input type="text" class="form-control" id="nombre" placeholder="Nombre (Ej. Paseo en Bote)" required>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <input type="number" class="form-control" id="precio" placeholder="Precio ($)" required>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <input type="text" class="form-control" id="ubicacion" placeholder="Ubicación (Ej. Laguna del Náinari)" required>
+                            </div>
+                            <div class="mb-3">
+                                <textarea class="form-control" id="descripcion" rows="2" placeholder="Describe la experiencia..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Publicar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="mb-4 text-center text-secondary">Experiencias Disponibles</h3>
+
+        <div id="listaExperiencias" class="row">
+            <div class="col-12 text-center mt-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p>Cargando aventuras...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const token = localStorage.getItem('jwtToken');
+        const role = localStorage.getItem('userRole');
+        const user = localStorage.getItem('username');
+
+        // 1. Verificar Login
+        if (!token) window.location.href = 'login.html';
+
+        // 2. Configurar Interfaz
+        document.getElementById('userInfo').innerText = `Hola, ${user} (${role === 'EMPRENDEDOR' ? 'Proveedor' : 'Turista'})`;
+        
+        if (role === 'EMPRENDEDOR') {
+            document.getElementById('createExpSection').style.display = 'flex'; // Mostrar form
+        }
+
+        // 3. Cargar Experiencias
+        async function cargarExperiencias() {
+            try {
+                const res = await fetch('http://localhost:8082/api/experiences', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.status === 401) logout();
+
+                const data = await res.json();
+                const container = document.getElementById('listaExperiencias');
+                container.innerHTML = '';
+
+                if (data.length === 0) {
+                    container.innerHTML = '<div class="col-12 text-center text-muted"><p>No hay experiencias aún. ¡Sé el primero en crear una!</p></div>';
+                    return;
+                }
+
+                data.forEach(exp => {
+                    container.innerHTML += `
+                        <div class="col-md-4 mb-4">
+                            <div class="card card-exp h-100 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">${exp.nombre}</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted"><i class="bi bi-geo-alt"></i> ${exp.ubicacion}</h6>
+                                    <p class="card-text">${exp.descripcion}</p>
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <span class="price-tag">$${exp.precio}</span>
+                                        <small class="text-muted">Por: ${exp.emprendedor ? exp.emprendedor.username : 'Anon'}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Error', 'No se pudieron cargar las experiencias', 'error');
+            }
+        }
+
+        // 4. Crear Experiencia
+        async function crearExperiencia(e) {
+            e.preventDefault(); // Evitar recarga
+            
+            const nuevaExp = {
+                nombre: document.getElementById('nombre').value,
+                descripcion: document.getElementById('descripcion').value,
+                precio: document.getElementById('precio').value,
+                ubicacion: document.getElementById('ubicacion').value
+            };
+
+            const res = await fetch('http://localhost:8082/api/experiences', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(nuevaExp)
+            });
+
+            if (res.ok) {
+                Swal.fire('¡Éxito!', 'Experiencia publicada correctamente', 'success');
+                // Limpiar form
+                document.querySelector('form').reset();
+                cargarExperiencias();
+            } else {
+                Swal.fire('Error', 'Revisa los datos ingresados', 'error');
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        // Iniciar
+        cargarExperiencias();
+    </script>
+</body>
+</html>
