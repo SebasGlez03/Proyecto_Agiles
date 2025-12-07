@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package reservas.service;
 
 import reservas.model.User;
@@ -15,20 +11,19 @@ import reservas.repository.UserRepository;
 import reservas.security.jwt.JwtUtils;
 
 /**
- *
- * @author Beto_
+ * Servicio encargado de la lógica de negocio relacionada con la autenticación y registro de usuarios.
+ * Intermedia entre los controladores y el repositorio de usuarios.
  */
 @Service
 public class AuthService {
-    // Inyectamos el repositorio
+
     @Autowired
     private UserRepository userRepository;
     
     @Autowired
     private PasswordEncoder passwordEncoder;
-    private final JwtUtils jwtUtils;
     
-//    private final JwtUtils jwtUtils;
+    private final JwtUtils jwtUtils;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils) {
         this.userRepository = userRepository;
@@ -37,52 +32,48 @@ public class AuthService {
     }
     
     /**
-     * Lógica para registrar un nuevo usuario (Visitante o Emprendedor).
+     * Registra un nuevo usuario en la base de datos.
+     * * @param username Nombre de usuario deseado.
+     * @param rawPassword Contraseña en texto plano (será encriptada antes de guardar).
+     * @param role Rol del usuario (ej. "VISITANTE", "EMPRENDEDOR").
+     * @return User El objeto usuario persistido.
+     * @throws Exception Si el nombre de usuario ya existe.
      */
     public User registerNewUser(String username, String rawPassword, String role) throws Exception {
-        
-        //1. Validamos que el username no esté duplicado
         if (userRepository.existsByUsername(username)) {
             throw new Exception("El nombre de usuario ya está en uso."); 
         }
 
-        //2. Encriptamos la contraseña
         String encodedPassword = passwordEncoder.encode(rawPassword);
-
-        //3. Creamos el nuevo usuario
         User newUser = new User(username, encodedPassword, role);
 
-        //4. Guardamos en la BD (Persistencia real con JPA)
         return userRepository.save(newUser);
     }
     
     /**
-     * Procesa la solicitud de inicio de sesión.
-     * @param loginRequest
-     * @return 
+     * Autentica a un usuario verificando sus credenciales y generando un token JWT.
+     *
+     * @param loginRequest Objeto DTO con el usuario y contraseña.
+     * @return Optional&lt;JwtResponse&gt; Contenedor con la respuesta JWT si las credenciales son válidas,
+     * u Optional vacío si fallan.
      */
     public Optional<JwtResponse> authenticateUser(LoginRequest loginRequest) {
-        
         Optional<User> userOptional = userRepository.findByUsername(loginRequest.getUsername());
 
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             
             if (passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-                
-                // --- INTEGRACIÓN DEL JWT (CORREGIDA) ---
                 String roleName = user.getRole();
                 String jwtToken = jwtUtils.generateJwtToken(user.getUsername(), roleName); 
-                // ----------------------------------------
                 
                 return Optional.of(new JwtResponse(
                     jwtToken, 
                     user.getUsername(), 
-                    roleName // Usamos la variable roleName
+                    roleName
                 ));
             }
         }
-        
         return Optional.empty();
     }
 }

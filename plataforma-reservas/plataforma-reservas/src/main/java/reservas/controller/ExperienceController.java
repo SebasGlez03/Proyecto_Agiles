@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package reservas.controller;
 
 import java.util.List;
@@ -18,26 +14,38 @@ import reservas.model.Experience;
 import reservas.service.ExperienceService;
 
 /**
- *
- * @author Beto_
+ * Controlador REST para el manejo de recursos de Experiencias.
+ * Expone endpoints bajo la ruta "/api/experiences".
  */
 @RestController
 @RequestMapping("/api/experiences")
 public class ExperienceController {
+    
     @Autowired
     private ExperienceService experienceService;
 
-    // R6: Listar todas (Público o logueado)
+    /**
+     * Obtiene el listado completo de experiencias disponibles.
+     * Endpoint: GET /api/experiences
+     * * @return ResponseEntity con la lista de experiencias.
+     */
     @GetMapping
     public ResponseEntity<List<Experience>> listAll() {
         return ResponseEntity.ok(experienceService.getAllExperiences());
     }
 
-    // R4 y R5: Crear experiencia (Solo autenticados)
+    /**
+     * Crea una nueva experiencia. Requiere que el usuario esté autenticado.
+     * El usuario propietario se infiere del Token JWT actual.
+     * Endpoint: POST /api/experiences
+     *
+     * @param experience El objeto Experience enviado en el cuerpo de la petición.
+     * @return ResponseEntity con la experiencia creada o un mensaje de error (Bad Request).
+     */
     @PostMapping
     public ResponseEntity<?> create(@RequestBody Experience experience) {
         try {
-            // Obtenemos el usuario del Token JWT automáticamente gracias al filtro
+            // Obtenemos el usuario del contexto de seguridad (inyectado por JwtAuthFilter)
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String username = auth.getName();
 
