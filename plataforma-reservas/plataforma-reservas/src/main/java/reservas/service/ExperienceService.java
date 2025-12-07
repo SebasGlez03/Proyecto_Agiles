@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package reservas.service;
 
 import java.util.List;
@@ -13,27 +9,41 @@ import reservas.repository.ExperienceRepository;
 import reservas.repository.UserRepository;
 
 /**
- *
- * @author Beto_
+ * Servicio de negocio para la gestión de Experiencias Turísticas.
  */
 @Service
 public class ExperienceService {
+    
     @Autowired
     private ExperienceRepository experienceRepository;
     
     @Autowired
     private UserRepository userRepository;
 
+    /**
+     * Recupera todas las experiencias registradas en el sistema.
+     *
+     * @return List&lt;Experience&gt; Lista de todas las experiencias.
+     */
     public List<Experience> getAllExperiences() {
         return experienceRepository.findAll();
     }
 
+    /**
+     * Crea una nueva experiencia asociada a un emprendedor.
+     * Aplica la regla de negocio que valida que solo los usuarios con rol "EMPRENDEDOR"
+     * pueden crear contenido.
+     *
+     * @param experience Objeto con los datos de la experiencia a crear.
+     * @param username Nombre del usuario que intenta crear la experiencia.
+     * @return Experience La experiencia creada y guardada.
+     * @throws Exception Si el usuario no existe o no tiene el rol de "EMPRENDEDOR".
+     */
     public Experience createExperience(Experience experience, String username) throws Exception {
-        // Buscamos al usuario que está creando la experiencia
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new Exception("Usuario no encontrado"));
 
-        // Validamos que sea EMPRENDEDOR (Regla de Negocio del PDF CU03)
+        // Regla de Negocio: Validación de rol
         if (!"EMPRENDEDOR".equalsIgnoreCase(user.getRole())) {
             throw new Exception("Solo los emprendedores pueden crear experiencias.");
         }

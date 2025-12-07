@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package reservas.security.jwt;
 
 import io.jsonwebtoken.Jwts;
@@ -14,6 +10,13 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+/**
+ * Componente de utilidad para la gestión de JSON Web Tokens (JWT).
+ * <p>
+ * Se encarga de generar, firmar y validar los tokens de autenticación,
+ * así como de extraer la información contenida en ellos (claims).
+ * </p>
+ */
 @Component
 public class JwtUtils {
 
@@ -25,41 +28,62 @@ public class JwtUtils {
 
     private SecretKey key;
 
-    // Inicializa la llave una sola vez después de cargar la configuración
+    /**
+     * Inicializa la clave criptográfica una vez que las propiedades han sido inyectadas.
+     * Utiliza codificación UTF-8 para garantizar consistencia en la generación de la clave.
+     */
     @PostConstruct
     public void init() {
-        // En JJWT 0.12+, se recomienda usar StandardCharsets.UTF_8 explícitamente
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Genera un nuevo token JWT para un usuario autenticado.
+     *
+     * @param username El nombre de usuario (subject) para el token.
+     * @param role El rol del usuario, que se incluirá como un "claim" personalizado.
+     * @return String La cadena del token JWT firmado y compacto.
+     */
     public String generateJwtToken(String username, String role) {
         return Jwts.builder()
                 .subject(username)
                 .claim("role", role)
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(key) // Firma automática con el algoritmo adecuado según la llave
+                .signWith(key)
                 .compact();
     }
 
+    /**
+     * Extrae el nombre de usuario (subject) contenido en un token JWT.
+     *
+     * @param token El token JWT del cual extraer la información.
+     * @return String El nombre de usuario contenido en el token.
+     */
     public String getUserNameFromJwtToken(String token) {
         return Jwts.parser()
-                .verifyWith(key) // <--- NUEVA SINTAXIS
+                .verifyWith(key)
                 .build()
-                .parseSignedClaims(token) // Reemplaza a parseClaimsJws
+                .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
     }
 
+    /**
+     * Valida la firma y la estructura de un token JWT.
+     *
+     * @param authToken El token a validar.
+     * @return boolean {@code true} si el token es válido y no ha expirado; {@code false} en caso contrario.
+     */
     public boolean validateJwtToken(String authToken) {
         try {
             Jwts.parser()
-                .verifyWith(key) // <--- NUEVA SINTAXIS
+                .verifyWith(key)
                 .build()
                 .parseSignedClaims(authToken);
             return true;
         } catch (Exception e) {
-            // Puedes agregar logs aquí: logger.error("Invalid JWT signature: {}", e.getMessage());
+            // Se recomienda agregar logs aquí para depurar errores de seguridad
             return false;
         }
     }
